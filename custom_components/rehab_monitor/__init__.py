@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import uuid
 from typing import Any
 
@@ -17,19 +18,15 @@ from .coordinator import RehabDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "rehab-monitor-card.js"
-CARD_URL = f"/rehab-monitor/{CARD_FILENAME}"
+CARD_URL = f"/local/{CARD_FILENAME}"
 LOVELACE_RESOURCES_STORAGE_KEY = "lovelace_resources"
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Serve the card JS and register it as a Lovelace resource."""
-    card_path = os.path.join(os.path.dirname(__file__), CARD_FILENAME)
+    """Copy card JS to www/ and register it as a Lovelace resource."""
+    await hass.async_add_executor_job(_copy_card_to_www, hass)
 
-    # Serve the JS file directly from the component directory (no www copy needed).
-    hass.http.register_static_path(CARD_URL, card_path, cache_headers=False)
-
-    # Register Lovelace resource after HA has fully started (storage is ready).
-    async def _register(_event=None) -> None:
+    async def _register(_event: object = None) -> None:
         await _async_ensure_lovelace_resource(hass)
 
     if hass.is_running:
@@ -38,6 +35,14 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register)
 
     return True
+
+
+def _copy_card_to_www(hass: HomeAssistant) -> None:
+    src = os.path.join(os.path.dirname(__file__), CARD_FILENAME)
+    www_dir = hass.config.path("www")
+    os.makedirs(www_dir, exist_ok=True)
+    shutil.copy2(src, os.path.join(www_dir, CARD_FILENAME))
+    _LOGGER.debug("RehabMonitor: skopiowano %s → www/", CARD_FILENAME)
 
 
 async def _async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
@@ -50,7 +55,7 @@ async def _async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
     data["items"] = items
     await store.async_save(data)
     _LOGGER.info(
-        "RehabMonitor: registered Lovelace resource %s — zrób Ctrl+Shift+R w przeglądarce.",
+        "RehabMonitor: zarejestrowano zasób Lovelace %s — zrób Ctrl+Shift+R.",
         CARD_URL,
     )
 
