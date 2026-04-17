@@ -304,9 +304,10 @@ class RehabMonitorCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._config  = {};
-    this._hass    = null;
-    this._spinning = false;
+    this._config      = {};
+    this._hass        = null;
+    this._spinning    = false;
+    this._showSchedule = false;
   }
 
   // ── HA interface ─────────────────────────────────────────────────────────
@@ -325,7 +326,6 @@ class RehabMonitorCard extends HTMLElement {
       "sensor.rehab_wolne_terminy",
       "switch.rehab_monitor_active",
       "select.rehab_miejsce",
-      "input_boolean.rehab_show_schedule",
       "number.rehab_scan_interval",
       "number.rehab_hour_start",
       "number.rehab_hour_end",
@@ -400,11 +400,12 @@ class RehabMonitorCard extends HTMLElement {
     const hStart   = this._s("number.rehab_hour_start", "7");
     const hEnd     = this._s("number.rehab_hour_end", "23");
     const visitMin = this._s("number.rehab_visit_hour_min", "0");
-    const showSch  = this._s("input_boolean.rehab_show_schedule") === "on";
+    const showSch  = this._showSchedule;
     const title    = this._config.title ?? "Rehab Monitor";
     const updStr   = this._fmtDt(upd);
 
-    const schedSummary = `co ${interval} min · ${this._pad(hStart)}:00–${this._pad(hEnd)}:00`;
+    const intervalInt = Math.round(Number(interval));
+    const schedSummary = `co ${intervalInt} min · ${this._pad(hStart)}:00–${this._pad(hEnd)}:00`;
 
     return `
       <div class="header">
@@ -497,7 +498,7 @@ class RehabMonitorCard extends HTMLElement {
       <div class="empty-state">
         <ha-icon icon="mdi:calendar-blank-outline"></ha-icon>
         Brak wolnych terminów
-        <span class="empty-meta">co ${interval} min · ${this._pad(hStart)}:00–${this._pad(hEnd)}:00</span>
+        <span class="empty-meta">co ${Math.round(Number(interval))} min · ${this._pad(hStart)}:00–${this._pad(hEnd)}:00</span>
       </div>`;
   }
 
@@ -541,12 +542,10 @@ class RehabMonitorCard extends HTMLElement {
           break;
         }
 
-        case "toggle-schedule": {
-          const on = this._s("input_boolean.rehab_show_schedule") === "on";
-          this._hass.callService("input_boolean", on ? "turn_off" : "turn_on",
-            { entity_id: "input_boolean.rehab_show_schedule" });
+        case "toggle-schedule":
+          this._showSchedule = !this._showSchedule;
+          this._render();
           break;
-        }
       }
     });
 
