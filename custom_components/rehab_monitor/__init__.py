@@ -18,7 +18,7 @@ from .coordinator import RehabDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "rehab-monitor-card.js"
-CARD_VERSION = "2"
+CARD_VERSION = "3"
 CARD_URL = f"/local/{CARD_FILENAME}?v={CARD_VERSION}"
 LOVELACE_RESOURCES_STORAGE_KEY = "lovelace_resources"
 
@@ -68,6 +68,12 @@ async def _async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Rehab Monitor from a config entry."""
+    # Copy card JS and register Lovelace resource here too, so the card
+    # is always refreshed when the integration is loaded via config entry
+    # (async_setup may not be called if the domain isn't in configuration.yaml).
+    await hass.async_add_executor_job(_copy_card_to_www, hass)
+    await _async_ensure_lovelace_resource(hass)
+
     coordinator = RehabDataUpdateCoordinator(hass, entry)
     await coordinator.async_setup()
     await coordinator.async_config_entry_first_refresh()

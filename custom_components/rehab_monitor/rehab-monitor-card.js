@@ -617,6 +617,8 @@ class RehabMonitorCard extends HTMLElement {
 
 customElements.define("rehab-monitor-card", RehabMonitorCard);
 
+console.info("%c REHAB-MONITOR-CARD %c v3 ", "background:#2196F3;color:#fff;padding:2px 6px;border-radius:3px;", "background:#eee;color:#000;padding:2px 6px;");
+
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "rehab-monitor-card",
