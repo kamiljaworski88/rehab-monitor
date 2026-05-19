@@ -53,6 +53,11 @@
           "off": "Brak wolnych terminów"
         }
       }
+    },
+    "text": {
+      "rehab_wykluczeni": {
+        "name": "Wyklucz rehabilitantów"
+      }
     }
   }
 }

@@ -11,7 +11,7 @@ SCAN_INTERVAL = timedelta(minutes=15)
 HOUR_START = 7
 HOUR_END = 23
 
-PLATFORMS = ["switch", "select", "sensor", "binary_sensor", "button", "number"]
+PLATFORMS = ["switch", "select", "sensor", "binary_sensor", "button", "number", "text"]
 
 # ── Config entry keys ─────────────────────────────────────────────────────────
 CONF_LOGIN = "login"
@@ -19,6 +19,7 @@ CONF_HASLO = "haslo"
 CONF_NOTIFY_SERVICE = "notify_service"
 CONF_PLACE_ID_TERAPIA = "place_id_terapia"
 CONF_PLACE_ID_SI = "place_id_si"
+CONF_WYKLUCZENI = "wykluczeni_rehabilitanci"
 
 # ── Place IDs ─────────────────────────────────────────────────────────────────
 # Confirmed via DevTools: PlaceId=7 for "Terapia dzieci".

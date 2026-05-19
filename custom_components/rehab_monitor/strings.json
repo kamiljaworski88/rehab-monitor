@@ -16,5 +16,12 @@
     "abort": {
       "already_configured": "Rehab Monitor jest już skonfigurowany."
     }
+  },
+  "entity": {
+    "text": {
+      "rehab_wykluczeni": {
+        "name": "Wyklucz rehabilitantów"
+      }
+    }
   }
 }

@@ -166,6 +166,9 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # 0 = show all (no filter).
         self._visit_hour_min: int = 0
 
+        # Rehabilitants to exclude — lowercased names for case-insensitive matching.
+        self._excluded: set[str] = set()
+
     # ── lifecycle ─────────────────────────────────────────────────────────────
 
     async def async_setup(self) -> None:
@@ -222,6 +225,10 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def set_visit_hour_min(self, hour: int) -> None:
         """Ignore slots whose start time is before this hour. 0 = no filter."""
         self._visit_hour_min = max(0, min(hour, 23))
+
+    def set_excluded_rehabilitants(self, value: str) -> None:
+        """Update excluded rehabilitant names from a comma-separated string."""
+        self._excluded = {name.strip().lower() for name in value.split(",") if name.strip()}
 
     # ── coordinator core ──────────────────────────────────────────────────────
 
@@ -534,12 +541,16 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     except (ValueError, IndexError):
                         pass  # malformed time — include the slot rather than drop it
 
+                rehabilitant = str(item.get(RESP_FIELD_DOCTOR, ""))
+                if self._excluded and rehabilitant.lower() in self._excluded:
+                    continue
+
                 results.append(
                     {
                         "slot_id": slot_id,
                         "data": _parse_start_date(raw_date),
                         "godzina": godzina,
-                        "rehabilitant": str(item.get(RESP_FIELD_DOCTOR, "")),
+                        "rehabilitant": rehabilitant,
                         "miejsce": str(item.get(RESP_FIELD_PLACE, miejsce)),
                     }
                 )
