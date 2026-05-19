@@ -18,7 +18,8 @@ from .coordinator import RehabDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "rehab-monitor-card.js"
-CARD_URL = f"/local/{CARD_FILENAME}"
+CARD_VERSION = "2"
+CARD_URL = f"/local/{CARD_FILENAME}?v={CARD_VERSION}"
 LOVELACE_RESOURCES_STORAGE_KEY = "lovelace_resources"
 
 
@@ -49,13 +50,18 @@ async def _async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
     store = Store(hass, 1, LOVELACE_RESOURCES_STORAGE_KEY)
     data: dict[str, Any] = await store.async_load() or {"items": []}
     items: list[dict[str, Any]] = data.get("items", [])
+
     if any(item.get("url") == CARD_URL for item in items):
         return
+
+    # Remove stale entries for this card (old URL without version or old version number)
+    items = [item for item in items if CARD_FILENAME not in item.get("url", "")]
+
     items.append({"id": str(uuid.uuid4()), "type": "module", "url": CARD_URL})
     data["items"] = items
     await store.async_save(data)
     _LOGGER.info(
-        "RehabMonitor: zarejestrowano zasób Lovelace %s — zrób Ctrl+Shift+R.",
+        "RehabMonitor: zaktualizowano zasób Lovelace %s — zrób Ctrl+Shift+R.",
         CARD_URL,
     )
 
