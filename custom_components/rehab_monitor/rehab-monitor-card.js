@@ -239,6 +239,31 @@ const STYLES = `
 
   .ctrl-select:focus { border-color: var(--primary-color); }
 
+  /* ── Exclude filter ── */
+  .ctrl-text-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .ctrl-input {
+    background: var(--card-background-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--divider-color);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .ctrl-input:focus { border-color: var(--primary-color); }
+  .ctrl-input::placeholder { color: var(--disabled-text-color); }
+
   /* ── Schedule section ── */
   .schedule-header {
     display: flex;
@@ -330,6 +355,7 @@ class RehabMonitorCard extends HTMLElement {
       "number.rehab_hour_start",
       "number.rehab_hour_end",
       "number.rehab_visit_hour_min",
+      "text.rehab_wykluczeni",
     ];
 
     const changed = !prev || watch.some((id) => prev.states[id] !== hass.states[id]);
@@ -396,10 +422,11 @@ class RehabMonitorCard extends HTMLElement {
     const monOn    = this._s("switch.rehab_monitor_active") === "on";
     const miejsce  = this._s("select.rehab_miejsce");
     const opts     = this._a("select.rehab_miejsce", "options") ?? [];
-    const interval = this._s("number.rehab_scan_interval", "15");
-    const hStart   = this._s("number.rehab_hour_start", "7");
-    const hEnd     = this._s("number.rehab_hour_end", "23");
-    const visitMin = this._s("number.rehab_visit_hour_min", "0");
+    const interval  = this._s("number.rehab_scan_interval", "15");
+    const hStart    = this._s("number.rehab_hour_start", "7");
+    const hEnd      = this._s("number.rehab_hour_end", "23");
+    const visitMin  = this._s("number.rehab_visit_hour_min", "0");
+    const wykluczeni = this._s("text.rehab_wykluczeni", "");
     const showSch  = this._showSchedule;
     const title    = this._config.title ?? "Rehab Monitor";
     const updStr   = this._fmtDt(upd);
@@ -453,6 +480,17 @@ class RehabMonitorCard extends HTMLElement {
               `<option value="${this._esc(o)}"${o === miejsce ? " selected" : ""}>${this._esc(o)}</option>`
             ).join("")}
           </select>
+        </div>
+
+        <div class="ctrl-text-row">
+          <div class="control-label">
+            <ha-icon icon="mdi:account-cancel"></ha-icon>
+            Wyklucz rehabilitantów
+          </div>
+          <input class="ctrl-input" type="text"
+                 placeholder="np. Kowalski Jan, Nowak Anna"
+                 value="${this._esc(wykluczeni)}"
+                 data-entity-text="text.rehab_wykluczeni">
         </div>
       </div>
 
@@ -564,6 +602,13 @@ class RehabMonitorCard extends HTMLElement {
         this._hass.callService("number", "set_value", {
           entity_id: el.dataset.entity,
           value: parseFloat(el.value),
+        });
+      }
+
+      if (el.dataset.entityText) {
+        this._hass.callService("text", "set_value", {
+          entity_id: el.dataset.entityText,
+          value: el.value,
         });
       }
     });
