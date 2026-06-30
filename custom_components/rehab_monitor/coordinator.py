@@ -46,6 +46,7 @@ from .const import (
     DATA_LAST_UPDATE,
     DATA_TERMINY,
     DATE_FORMAT,
+    DEFAULT_NOTIFY_MAX_COUNT,
     DEFAULT_PLACE_ID_SI,
     DEFAULT_PLACE_ID_TERAPIA,
     DOMAIN,
@@ -145,10 +146,16 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._logged_in: bool = False
         self._csrf_token: str = ""
 
-        # Deduplication set: slot IDs for which a notification was already sent.
-        # Slots removed from the API response are evicted so they can re-notify
-        # if they reappear (cancelled → re-opened appointment).
-        self.sent_slot_ids: set[str] = set()
+        # Deduplication counter: slot_id → liczba wysłanych powiadomień.
+        # Po osiągnięciu _notify_max_count slot jest nadal widoczny w HA,
+        # ale push nie jest już wysyłany.
+        # Wpisy są usuwane gdy slot znika z API, co resetuje licznik
+        # (termin anulowany → ponownie otwarty → nowe powiadomienia).
+        self.sent_slot_ids: dict[str, int] = {}
+
+        # Maksymalna liczba powiadomień push dla tego samego slotu.
+        # Zmieniana przez encję number.rehab_notify_max_count.
+        self._notify_max_count: int = DEFAULT_NOTIFY_MAX_COUNT
 
         # Set by switch / select entities; coordinator reads these on each tick.
         self.monitor_active: bool = True
@@ -226,6 +233,10 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Ignore slots whose start time is before this hour. 0 = no filter."""
         self._visit_hour_min = max(0, min(hour, 23))
 
+    def set_notify_max_count(self, count: int) -> None:
+        """Ustaw maks. liczbę powiadomień push dla tego samego slotu (≥ 1)."""
+        self._notify_max_count = max(1, count)
+
     def set_excluded_rehabilitants(self, value: str) -> None:
         """Update excluded rehabilitant names from a comma-separated string."""
         self._excluded = {name.strip().lower() for name in value.split(",") if name.strip()}
@@ -254,12 +265,19 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 terminy = await self._fetch_terms(self.miejsce)
 
             current_ids = {t["slot_id"] for t in terminy}
-            new_slots = [t for t in terminy if t["slot_id"] not in self.sent_slot_ids]
-            self.sent_slot_ids -= self.sent_slot_ids - current_ids  # evict gone slots
+            # evict sloty które zniknęły z API (resetuje licznik dla nich)
+            self.sent_slot_ids = {
+                k: v for k, v in self.sent_slot_ids.items() if k in current_ids
+            }
+            new_slots = [
+                t for t in terminy
+                if self.sent_slot_ids.get(t["slot_id"], 0) < self._notify_max_count
+            ]
 
             await self._send_notifications(new_slots)
             for slot in new_slots:
-                self.sent_slot_ids.add(slot["slot_id"])
+                slot_id = slot["slot_id"]
+                self.sent_slot_ids[slot_id] = self.sent_slot_ids.get(slot_id, 0) + 1
 
             return {
                 DATA_TERMINY: terminy,

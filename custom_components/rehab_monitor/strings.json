@@ -18,6 +18,11 @@
     }
   },
   "entity": {
+    "number": {
+      "rehab_notify_max_count": {
+        "name": "Maks. powiadomień o tym samym terminie"
+      }
+    },
     "text": {
       "rehab_wykluczeni": {
         "name": "Wyklucz rehabilitantów"

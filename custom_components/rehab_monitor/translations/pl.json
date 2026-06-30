@@ -25,6 +25,11 @@
     }
   },
   "entity": {
+    "number": {
+      "rehab_notify_max_count": {
+        "name": "Maks. powiadomień o tym samym terminie"
+      }
+    },
     "switch": {
       "rehab_monitor_active": {
         "name": "Monitorowanie terminów"

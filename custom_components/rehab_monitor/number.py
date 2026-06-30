@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DOMAIN, HOUR_END, HOUR_START, SCAN_INTERVAL
+from .const import DEFAULT_NOTIFY_MAX_COUNT, DOMAIN, HOUR_END, HOUR_START, SCAN_INTERVAL
 from .coordinator import RehabDataUpdateCoordinator
 
 _DEFAULT_INTERVAL = int(SCAN_INTERVAL.total_seconds() // 60)
@@ -24,6 +24,7 @@ async def async_setup_entry(
         RehabHourStartNumber(coordinator),
         RehabHourEndNumber(coordinator),
         RehabVisitHourMinNumber(coordinator),
+        RehabNotifyMaxCountNumber(coordinator),
     ])
 
 
@@ -140,3 +141,24 @@ class RehabVisitHourMinNumber(_RehabNumberBase):
 
     def _apply(self, value: int) -> None:
         self._coordinator.set_visit_hour_min(value)
+
+
+class RehabNotifyMaxCountNumber(_RehabNumberBase):
+    """Maximum number of push notifications per slot (1 = notify once, 2 = twice, …)."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Maks. powiadomień o tym samym terminie"
+    _attr_icon = "mdi:bell-badge-outline"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 10
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = "×"
+    _default_value = float(DEFAULT_NOTIFY_MAX_COUNT)
+
+    def __init__(self, coordinator: RehabDataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{DOMAIN}_notify_max_count"
+        self.entity_id = "number.rehab_notify_max_count"
+
+    def _apply(self, value: int) -> None:
+        self._coordinator.set_notify_max_count(value)

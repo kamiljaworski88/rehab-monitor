@@ -10,6 +10,7 @@ DOMAIN = "rehab_monitor"
 SCAN_INTERVAL = timedelta(minutes=15)
 HOUR_START = 7
 HOUR_END = 23
+DEFAULT_NOTIFY_MAX_COUNT = 1  # maks. liczba powiadomień push dla tego samego slotu
 
 PLATFORMS = ["switch", "select", "sensor", "binary_sensor", "button", "number", "text"]
 
