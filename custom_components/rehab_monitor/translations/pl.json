@@ -18,10 +18,29 @@
           "place_id_terapia": "Wartość placeId wysyłana w żądaniu FreeTermsFilter dla miejsca 'Terapia dzieci'. Sprawdź w DevTools → Network.",
           "place_id_si": "Wartość placeId wysyłana w żądaniu FreeTermsFilter dla miejsca 'SI-1-1'. Sprawdź w DevTools → Network."
         }
+      },
+      "reconfigure": {
+        "title": "Zmień konfigurację Rehab Monitor",
+        "description": "Zaktualizuj ustawienia integracji.\n\nNazwę serwisu powiadomień znajdziesz w: Narzędzia deweloperskie → Usługi → wpisz `notify.mobile_app`.\n\n{place_hint}",
+        "data": {
+          "login": "Login (opcjonalnie)",
+          "haslo": "Hasło (opcjonalnie)",
+          "notify_service": "Nazwa serwisu powiadomień (np. mobile_app_telefon)",
+          "place_id_terapia": "ID miejsca — Terapia dzieci",
+          "place_id_si": "ID miejsca — SI-1-1"
+        },
+        "data_description": {
+          "login": "Nazwa użytkownika do logowania na portal Intermedicus. Pozostaw puste jeśli portal jest publiczny.",
+          "haslo": "Hasło do konta na portalu Intermedicus.",
+          "notify_service": "Nazwa serwisu powiadomień push z HA Companion App, np. mobile_app_twoj_telefon.",
+          "place_id_terapia": "Wartość placeId wysyłana w żądaniu FreeTermsFilter dla miejsca 'Terapia dzieci'. Sprawdź w DevTools → Network.",
+          "place_id_si": "Wartość placeId wysyłana w żądaniu FreeTermsFilter dla miejsca 'SI-1-1'. Sprawdź w DevTools → Network."
+        }
       }
     },
     "abort": {
-      "already_configured": "Rehab Monitor jest już skonfigurowany."
+      "already_configured": "Rehab Monitor jest już skonfigurowany.",
+      "reconfigure_successful": "Konfiguracja została zaktualizowana."
     }
   },
   "entity": {

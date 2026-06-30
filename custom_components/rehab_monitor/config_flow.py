@@ -28,6 +28,11 @@ STEP_USER_SCHEMA = vol.Schema(
     }
 )
 
+_PLACE_HINT = (
+    "ID miejsca to wartość wysyłana w polu placeId zapytania "
+    "FreeTermsFilter — sprawdź w DevTools → Network."
+)
+
 
 class RehabMonitorConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the config flow for Rehab Monitor.
@@ -52,10 +57,47 @@ class RehabMonitorConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=STEP_USER_SCHEMA,
-            description_placeholders={
-                "place_hint": (
-                    "ID miejsca to wartość wysyłana w polu placeId zapytania "
-                    "FreeTermsFilter — sprawdź w DevTools → Network."
-                )
-            },
+            description_placeholders={"place_hint": _PLACE_HINT},
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Allow changing integration settings after initial setup."""
+        entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            self.hass.config_entries.async_update_entry(
+                entry, data={**entry.data, **user_input}
+            )
+            await self.hass.config_entries.async_reload(entry.entry_id)
+            return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_LOGIN,
+                        default=entry.data.get(CONF_LOGIN, ""),
+                    ): str,
+                    vol.Optional(
+                        CONF_HASLO,
+                        default=entry.data.get(CONF_HASLO, ""),
+                    ): str,
+                    vol.Required(
+                        CONF_NOTIFY_SERVICE,
+                        default=entry.data.get(CONF_NOTIFY_SERVICE, "notify"),
+                    ): str,
+                    vol.Optional(
+                        CONF_PLACE_ID_TERAPIA,
+                        default=entry.data.get(CONF_PLACE_ID_TERAPIA, DEFAULT_PLACE_ID_TERAPIA),
+                    ): str,
+                    vol.Optional(
+                        CONF_PLACE_ID_SI,
+                        default=entry.data.get(CONF_PLACE_ID_SI, DEFAULT_PLACE_ID_SI),
+                    ): str,
+                }
+            ),
+            description_placeholders={"place_hint": _PLACE_HINT},
         )
