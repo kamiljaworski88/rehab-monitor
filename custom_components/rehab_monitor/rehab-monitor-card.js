@@ -355,6 +355,7 @@ class RehabMonitorCard extends HTMLElement {
       "number.rehab_hour_start",
       "number.rehab_hour_end",
       "number.rehab_visit_hour_min",
+      "number.rehab_notify_max_count",
       "text.rehab_wykluczeni",
     ];
 
@@ -422,10 +423,11 @@ class RehabMonitorCard extends HTMLElement {
     const monOn    = this._s("switch.rehab_monitor_active") === "on";
     const miejsce  = this._s("select.rehab_miejsce");
     const opts     = this._a("select.rehab_miejsce", "options") ?? [];
-    const interval  = this._s("number.rehab_scan_interval", "15");
-    const hStart    = this._s("number.rehab_hour_start", "7");
-    const hEnd      = this._s("number.rehab_hour_end", "23");
-    const visitMin  = this._s("number.rehab_visit_hour_min", "0");
+    const interval   = this._s("number.rehab_scan_interval", "15");
+    const hStart     = this._s("number.rehab_hour_start", "7");
+    const hEnd       = this._s("number.rehab_hour_end", "23");
+    const visitMin   = this._s("number.rehab_visit_hour_min", "0");
+    const notifyMax  = this._s("number.rehab_notify_max_count", "1");
     const wykluczeni = this._s("text.rehab_wykluczeni", "");
     const showSch  = this._showSchedule;
     const title    = this._config.title ?? "Rehab Monitor";
@@ -502,7 +504,7 @@ class RehabMonitorCard extends HTMLElement {
         <span class="sched-summary">${schedSummary}</span>
       </div>
 
-      ${showSch ? this._schedHtml(interval, hStart, hEnd, visitMin) : ""}
+      ${showSch ? this._schedHtml(interval, hStart, hEnd, visitMin, notifyMax) : ""}
     `;
   }
 
@@ -540,7 +542,7 @@ class RehabMonitorCard extends HTMLElement {
       </div>`;
   }
 
-  _schedHtml(interval, hStart, hEnd, visitMin) {
+  _schedHtml(interval, hStart, hEnd, visitMin, notifyMax) {
     const row = (label, entity, value, min, max, step = 1) => `
       <div class="sched-row">
         <span class="sched-label">${label}</span>
@@ -552,10 +554,11 @@ class RehabMonitorCard extends HTMLElement {
 
     return `
       <div class="sched-body">
-        ${row("Interwał (min)", "number.rehab_scan_interval", interval, 5, 120, 5)}
+        ${row("Interwał (min)", "number.rehab_scan_interval", interval, 1, 60)}
         ${row("Sprawdzaj od (godz.)", "number.rehab_hour_start", hStart, 0, 23)}
-        ${row("Sprawdzaj do (godz.)", "number.rehab_hour_end", hEnd, 0, 23)}
+        ${row("Sprawdzaj do (godz.)", "number.rehab_hour_end", hEnd, 0, 24)}
         ${row("Pokaż wizyty od (godz.)", "number.rehab_visit_hour_min", visitMin, 0, 23)}
+        ${row("Maks. powiadomień o terminie (×)", "number.rehab_notify_max_count", notifyMax, 1, 10)}
       </div>`;
   }
 
@@ -617,7 +620,7 @@ class RehabMonitorCard extends HTMLElement {
 
 customElements.define("rehab-monitor-card", RehabMonitorCard);
 
-console.info("%c REHAB-MONITOR-CARD %c v3 ", "background:#2196F3;color:#fff;padding:2px 6px;border-radius:3px;", "background:#eee;color:#000;padding:2px 6px;");
+console.info("%c REHAB-MONITOR-CARD %c v4 ", "background:#2196F3;color:#fff;padding:2px 6px;border-radius:3px;", "background:#eee;color:#000;padding:2px 6px;");
 
 window.customCards = window.customCards || [];
 window.customCards.push({
