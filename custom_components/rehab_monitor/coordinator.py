@@ -82,7 +82,6 @@ from .const import (
     RESP_DATA_WRAPPER_KEY,
     RESP_FIELD_DATE,
     RESP_FIELD_DOCTOR,
-    RESP_FIELD_ID,
     RESP_FIELD_IS_BOOKED,
     RESP_FIELD_PLACE,
     RESP_FIELD_TIME,
@@ -580,7 +579,6 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if item.get(RESP_FIELD_IS_BOOKED, False):
                     continue
 
-                slot_id = str(item[RESP_FIELD_ID])
                 raw_date = str(item.get(RESP_FIELD_DATE, ""))
                 godzina = str(item.get(RESP_FIELD_TIME, ""))
 
@@ -597,13 +595,23 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if self._excluded and rehabilitant.lower() in self._excluded:
                     continue
 
+                data = _parse_start_date(raw_date)
+                miejsce_slotu = str(item.get(RESP_FIELD_PLACE, miejsce))
+
+                # Dedup key built from the visit's own content (data+godzina+
+                # rehabilitant+miejsce) instead of the API's `Id` field — `Id`
+                # was found to change between polls for what is otherwise the
+                # same free slot, which made notification deduplication no-op
+                # and caused repeated push notifications for one visit.
+                slot_id = f"{data}|{godzina}|{rehabilitant}|{miejsce_slotu}"
+
                 results.append(
                     {
                         "slot_id": slot_id,
-                        "data": _parse_start_date(raw_date),
+                        "data": data,
                         "godzina": godzina,
                         "rehabilitant": rehabilitant,
-                        "miejsce": str(item.get(RESP_FIELD_PLACE, miejsce)),
+                        "miejsce": miejsce_slotu,
                     }
                 )
             except (KeyError, TypeError) as err:

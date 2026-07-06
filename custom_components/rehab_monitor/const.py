@@ -54,7 +54,12 @@ RESP_DATA_WRAPPER_KEY = "Data"
 # To update after a portal upgrade: capture GetFreeTerms response in DevTools
 # and update the constants below.  Wzorzec analogiczny do ecoharmonogram_pl
 # gdzie endpoint zmienił się po aktualizacji.
-RESP_FIELD_ID = "Id"                # int — unique slot identifier, e.g. 6312851
+# RESP_FIELD_ID: "Id" was previously used as the notification dedup key, but
+# was found to change between polls for what is otherwise the same free slot
+# (same date/time/rehabilitant/place) — the dedup key is now built from the
+# slot's own content instead (see coordinator._parse_terms). Kept here only
+# to document the API's response shape.
+RESP_FIELD_ID = "Id"                # int — slot identifier, e.g. 6312851 (NOT stable across polls)
 RESP_FIELD_DATE = "StartDate"       # str — ISO datetime "2026-04-17T14:40:00"
 RESP_FIELD_TIME = "StartTime"       # str — "14:40"
 RESP_FIELD_DOCTOR = "PersonelName"  # str — "Jurek-Pruska Justyna"
