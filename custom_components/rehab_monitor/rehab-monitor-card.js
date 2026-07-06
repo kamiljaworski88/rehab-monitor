@@ -356,6 +356,7 @@ class RehabMonitorCard extends HTMLElement {
       "number.rehab_hour_end",
       "number.rehab_visit_hour_min",
       "number.rehab_notify_max_count",
+      "number.rehab_notify_interval_minutes",
       "text.rehab_wykluczeni",
     ];
 
@@ -428,6 +429,7 @@ class RehabMonitorCard extends HTMLElement {
     const hEnd       = this._s("number.rehab_hour_end", "23");
     const visitMin   = this._s("number.rehab_visit_hour_min", "0");
     const notifyMax  = this._s("number.rehab_notify_max_count", "1");
+    const notifyInterval = this._s("number.rehab_notify_interval_minutes", "0");
     const wykluczeni = this._s("text.rehab_wykluczeni", "");
     const showSch  = this._showSchedule;
     const title    = this._config.title ?? "Rehab Monitor";
@@ -504,7 +506,7 @@ class RehabMonitorCard extends HTMLElement {
         <span class="sched-summary">${schedSummary}</span>
       </div>
 
-      ${showSch ? this._schedHtml(interval, hStart, hEnd, visitMin, notifyMax) : ""}
+      ${showSch ? this._schedHtml(interval, hStart, hEnd, visitMin, notifyMax, notifyInterval) : ""}
     `;
   }
 
@@ -542,7 +544,7 @@ class RehabMonitorCard extends HTMLElement {
       </div>`;
   }
 
-  _schedHtml(interval, hStart, hEnd, visitMin, notifyMax) {
+  _schedHtml(interval, hStart, hEnd, visitMin, notifyMax, notifyInterval) {
     const row = (label, entity, value, min, max, step = 1) => `
       <div class="sched-row">
         <span class="sched-label">${label}</span>
@@ -559,6 +561,7 @@ class RehabMonitorCard extends HTMLElement {
         ${row("Sprawdzaj do (godz.)", "number.rehab_hour_end", hEnd, 0, 24)}
         ${row("Pokaż wizyty od (godz.)", "number.rehab_visit_hour_min", visitMin, 0, 23)}
         ${row("Maks. powiadomień o terminie (×)", "number.rehab_notify_max_count", notifyMax, 1, 10)}
+        ${row("Odstęp między powiadomieniami (min)", "number.rehab_notify_interval_minutes", notifyInterval, 0, 1440)}
       </div>`;
   }
 

@@ -33,6 +33,9 @@
     "number": {
       "rehab_notify_max_count": {
         "name": "Maks. powiadomień o tym samym terminie"
+      },
+      "rehab_notify_interval_minutes": {
+        "name": "Odstęp między powiadomieniami o tym samym terminie"
       }
     },
     "text": {

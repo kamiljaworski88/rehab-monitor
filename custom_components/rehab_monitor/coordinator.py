@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
 from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -46,6 +47,7 @@ from .const import (
     DATA_LAST_UPDATE,
     DATA_TERMINY,
     DATE_FORMAT,
+    DEFAULT_NOTIFY_INTERVAL_MINUTES,
     DEFAULT_NOTIFY_MAX_COUNT,
     DEFAULT_PLACE_ID_SI,
     DEFAULT_PLACE_ID_TERAPIA,
@@ -91,6 +93,7 @@ from .const import (
     URL_LOGIN_PAGE,
     URL_TERMS_INDEX,
 )
+from .notification_policy import filter_by_min_interval, select_slots_to_notify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -156,6 +159,15 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Maksymalna liczba powiadomień push dla tego samego slotu.
         # Zmieniana przez encję number.rehab_notify_max_count.
         self._notify_max_count: int = DEFAULT_NOTIFY_MAX_COUNT
+
+        # Minimalny odstęp (w minutach) między kolejnymi powiadomieniami push
+        # dla tego samego slotu — niezależny od interwału skanowania portalu.
+        # Zmieniana przez encję number.rehab_notify_interval_minutes.
+        self._notify_interval_minutes: int = DEFAULT_NOTIFY_INTERVAL_MINUTES
+
+        # slot_id → czas (monotonic) ostatnio wysłanego powiadomienia.
+        # Wpisy są usuwane gdy slot znika z API (tak samo jak sent_slot_ids).
+        self.last_notified_at: dict[str, float] = {}
 
         # Set by switch / select entities; coordinator reads these on each tick.
         self.monitor_active: bool = True
@@ -237,6 +249,13 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Ustaw maks. liczbę powiadomień push dla tego samego slotu (≥ 1)."""
         self._notify_max_count = max(1, count)
 
+    def set_notify_interval_minutes(self, minutes: int) -> None:
+        """Ustaw min. odstęp (min) między powiadomieniami dla tego samego slotu.
+
+        0 wyłącza dodatkowe ograniczenie czasowe (obowiązuje tylko limit liczby).
+        """
+        self._notify_interval_minutes = max(0, minutes)
+
     def set_excluded_rehabilitants(self, value: str) -> None:
         """Update excluded rehabilitant names from a comma-separated string."""
         self._excluded = {name.strip().lower() for name in value.split(",") if name.strip()}
@@ -264,20 +283,35 @@ class RehabDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             else:
                 terminy = await self._fetch_terms(self.miejsce)
 
+            # Count-based budget (also evicts slots that disappeared from the API).
+            count_eligible, _ = select_slots_to_notify(
+                terminy, self.sent_slot_ids, self._notify_max_count
+            )
+            # Time-based throttle — independent of the scan interval.
+            now = time.monotonic()
+            new_slots = filter_by_min_interval(
+                count_eligible,
+                self.last_notified_at,
+                self._notify_interval_minutes * 60,
+                now,
+            )
+
+            await self._send_notifications(new_slots)
+
+            # Commit state: evict on the full current slot set, then bump only
+            # what was actually sent (slots blocked solely by the time throttle
+            # keep their existing count budget for the next successful send).
             current_ids = {t["slot_id"] for t in terminy}
-            # evict sloty które zniknęły z API (resetuje licznik dla nich)
             self.sent_slot_ids = {
                 k: v for k, v in self.sent_slot_ids.items() if k in current_ids
             }
-            new_slots = [
-                t for t in terminy
-                if self.sent_slot_ids.get(t["slot_id"], 0) < self._notify_max_count
-            ]
-
-            await self._send_notifications(new_slots)
+            self.last_notified_at = {
+                k: v for k, v in self.last_notified_at.items() if k in current_ids
+            }
             for slot in new_slots:
                 slot_id = slot["slot_id"]
                 self.sent_slot_ids[slot_id] = self.sent_slot_ids.get(slot_id, 0) + 1
+                self.last_notified_at[slot_id] = now
 
             return {
                 DATA_TERMINY: terminy,

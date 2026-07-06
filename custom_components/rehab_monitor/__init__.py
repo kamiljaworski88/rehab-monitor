@@ -18,7 +18,7 @@ from .coordinator import RehabDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "rehab-monitor-card.js"
-CARD_VERSION = "3"
+CARD_VERSION = "4"
 CARD_URL = f"/local/{CARD_FILENAME}?v={CARD_VERSION}"
 LOVELACE_RESOURCES_STORAGE_KEY = "lovelace_resources"
 

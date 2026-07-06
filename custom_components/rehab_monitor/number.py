@@ -7,7 +7,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DEFAULT_NOTIFY_MAX_COUNT, DOMAIN, HOUR_END, HOUR_START, SCAN_INTERVAL
+from .const import (
+    DEFAULT_NOTIFY_INTERVAL_MINUTES,
+    DEFAULT_NOTIFY_MAX_COUNT,
+    DOMAIN,
+    HOUR_END,
+    HOUR_START,
+    SCAN_INTERVAL,
+)
 from .coordinator import RehabDataUpdateCoordinator
 
 _DEFAULT_INTERVAL = int(SCAN_INTERVAL.total_seconds() // 60)
@@ -25,6 +32,7 @@ async def async_setup_entry(
         RehabHourEndNumber(coordinator),
         RehabVisitHourMinNumber(coordinator),
         RehabNotifyMaxCountNumber(coordinator),
+        RehabNotifyIntervalMinutesNumber(coordinator),
     ])
 
 
@@ -162,3 +170,28 @@ class RehabNotifyMaxCountNumber(_RehabNumberBase):
 
     def _apply(self, value: int) -> None:
         self._coordinator.set_notify_max_count(value)
+
+
+class RehabNotifyIntervalMinutesNumber(_RehabNumberBase):
+    """Min. odstęp (min) między powiadomieniami push dla tego samego slotu.
+
+    Niezależny od interwału skanowania portalu — 0 wyłącza dodatkowe
+    ograniczenie czasowe (obowiązuje wtedy tylko limit liczby powiadomień).
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Odstęp między powiadomieniami o tym samym terminie"
+    _attr_icon = "mdi:bell-clock-outline"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 1440
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = "min"
+    _default_value = float(DEFAULT_NOTIFY_INTERVAL_MINUTES)
+
+    def __init__(self, coordinator: RehabDataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{DOMAIN}_notify_interval_minutes"
+        self.entity_id = "number.rehab_notify_interval_minutes"
+
+    def _apply(self, value: int) -> None:
+        self._coordinator.set_notify_interval_minutes(value)
